@@ -1,3 +1,5 @@
+import '@/app/ui/global.css'; // 👈 Importación de estilos globales
+
 export default function RootLayout({
   children,
 }: {
