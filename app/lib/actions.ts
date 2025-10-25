@@ -1,69 +1,140 @@
 'use server';
-import { z } from 'zod';
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { z } from 'zod';
 import postgres from 'postgres';
+
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
- 
- 
+
 const FormSchema = z.object({
-  id: z.string(),
   customerId: z.string(),
   amount: z.coerce.number(),
   status: z.enum(['pending', 'paid']),
-  date: z.string(),
 });
- 
-const CreateInvoice = FormSchema.omit({ id: true, date: true });
 
+// ✅ Reutilizamos el mismo esquema para edición
+const UpdateInvoice = FormSchema;
 
-export async function createInvoice(formData: FormData) {
-    
-    const { customerId, amount, status } = CreateInvoice.parse({
+export type State = {
+  message: string | null;
+  errors?: {
+    customerId?: string[];
+    amount?: string[];
+    status?: string[];
+  };
+};
 
+// ✅ Para formularios con useActionState
+export async function createInvoice(
+  _prevState: State,
+  formData: FormData
+): Promise<State> {
+  const validatedFields = FormSchema.safeParse({
     customerId: formData.get('customerId'),
     amount: formData.get('amount'),
     status: formData.get('status'),
   });
-  // Test it out:
- const amountInCents = amount * 100;
-   const date = new Date().toISOString().split('T')[0];
 
-   await sql`
-    INSERT INTO invoices (customer_id, amount, status, date)
-    VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
-  `;
-   revalidatePath('/dashboard/invoices');
-    redirect('/dashboard/invoices');
+  if (!validatedFields.success) {
+    return {
+      message: 'Missing Fields. Failed to Create Invoice.',
+      errors: validatedFields.error.flatten().fieldErrors,
+    };
+  }
+
+  const { customerId, amount, status } = validatedFields.data;
+  const amountInCents = amount * 100;
+  const date = new Date().toISOString().split('T')[0];
+
+  try {
+    await sql`
+      INSERT INTO invoices (customer_id, amount, status, date)
+      VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
+    `;
+  } catch (error) {
+    return { message: 'Database Error: Failed to Create Invoice.' };
+  }
+
+  revalidatePath('/dashboard/invoices');
+  redirect('/dashboard/invoices');
+
+  return { message: null };
 }
 
-// Use Zod to update the expected types
-const UpdateInvoice = FormSchema.omit({ id: true, date: true });
- 
-// ...
- 
-export async function updateInvoice(id: string, formData: FormData) {
-  const { customerId, amount, status } = UpdateInvoice.parse({
+// ✅ Para formularios sin useActionState
+export async function updateInvoice(id: string, formData: FormData): Promise<void> {
+  const validatedFields = FormSchema.safeParse({
     customerId: formData.get('customerId'),
     amount: formData.get('amount'),
     status: formData.get('status'),
   });
- 
+
+  if (!validatedFields.success) {
+    throw new Error('Missing Fields. Failed to Update Invoice.');
+  }
+
+  const { customerId, amount, status } = validatedFields.data;
   const amountInCents = amount * 100;
- 
-  await sql`
-    UPDATE invoices
-    SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
-    WHERE id = ${id}
-  `;
- 
+
+  try {
+    await sql`
+      UPDATE invoices
+      SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
+      WHERE id = ${id}
+    `;
+  } catch (error) {
+    throw new Error('Database Error: Failed to Update Invoice.');
+  }
+
   revalidatePath('/dashboard/invoices');
   redirect('/dashboard/invoices');
 }
 
+// ✅ Para formularios con useActionState
+export async function updateInvoiceWithState(
+  id: string,
+  prevState: State,
+  formData: FormData
+): Promise<State> {
+  const validatedFields = UpdateInvoice.safeParse({
+    customerId: formData.get('customerId'),
+    amount: formData.get('amount'),
+    status: formData.get('status'),
+  });
 
-export async function deleteInvoice(id: string) {
-  await sql`DELETE FROM invoices WHERE id = ${id}`;
+  if (!validatedFields.success) {
+    return {
+      message: 'Missing Fields. Failed to Update Invoice.',
+      errors: validatedFields.error.flatten().fieldErrors,
+    };
+  }
+
+  const { customerId, amount, status } = validatedFields.data;
+  const amountInCents = amount * 100;
+
+  try {
+    await sql`
+      UPDATE invoices
+      SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
+      WHERE id = ${id}
+    `;
+  } catch (error) {
+    return { message: 'Database Error: Failed to Update Invoice.' };
+  }
+
+  revalidatePath('/dashboard/invoices');
+  redirect('/dashboard/invoices');
+
+  return { message: null };
+}
+
+export async function deleteInvoice(id: string): Promise<void> {
+  try {
+    await sql`DELETE FROM invoices WHERE id = ${id}`;
+  } catch (error) {
+    throw new Error('Database Error: Failed to Delete Invoice.');
+  }
+
   revalidatePath('/dashboard/invoices');
 }
