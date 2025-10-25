@@ -215,4 +215,15 @@ export async function fetchFilteredCustomers(query: string) {
     console.error('Database Error:', err);
     throw new Error('Failed to fetch customer table.');
   }
+
+
+}
+export async function fetchGradData() {
+  try {
+    const data = await sql`SELECT * FROM grades`; // ajusta la tabla si es diferente
+    return data;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch grade data.');
+  }
 }
