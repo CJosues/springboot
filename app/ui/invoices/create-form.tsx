@@ -14,8 +14,8 @@ import { useActionState } from 'react';
 
 export default function Form({ customers }: { customers: CustomerField[] }) {
   const initialState: State = { message: null, errors: {} };
-
   // ✅ Esta línea conecta el formulario con la acción del servidor
+  const [state, formAction] = useActionState(createInvoice, initialState);
 
 
   return (
@@ -46,6 +46,8 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
             </select>
             <UserCircleIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500" />
           </div>
+
+          
           <div id="customer-error" aria-live="polite" aria-atomic="true">
             {state.errors?.customerId &&
               state.errors.customerId.map((error: string) => (
