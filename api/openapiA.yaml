@@ -1,0 +1,102 @@
+openapi: 3.0.3
+info:
+  title: Componente A - Clientes y Pedidos API
+  version: 1.0.0
+  description: API para gestión de clientes y pedidos (MariaDB)
+servers:
+  - url: http://localhost:8081
+paths:
+  /clients:
+    get:
+      summary: Lista clientes
+      operationId: listClients
+      responses:
+        '200':
+          description: Lista de clientes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Client'
+  /clients/{id}:
+    get:
+      summary: Obtener cliente por id
+      operationId: getClient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Cliente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+  /orders:
+    post:
+      summary: Registrar pedido
+      operationId: createOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreate'
+      responses:
+        '201':
+          description: Pedido creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+    get:
+      summary: Listar pedidos
+      operationId: listOrders
+      responses:
+        '200':
+          description: Lista de pedidos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+components:
+  schemas:
+    Client:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+    OrderCreate:
+      type: object
+      properties:
+        clientId:
+          type: string
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              sku:
+                type: string
+              quantity:
+                type: integer
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+        clientId:
+          type: string
+        total:
+          type: number
+          format: float

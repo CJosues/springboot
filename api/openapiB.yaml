@@ -1,0 +1,99 @@
+openapi: 3.0.3
+info:
+  title: Componente B - Proveedores y Facturas API
+  version: 1.0.0
+  description: API para gestión de proveedores y facturas (PostgreSQL)
+servers:
+  - url: http://localhost:8082
+paths:
+  /suppliers:
+    get:
+      summary: Lista proveedores
+      operationId: listSuppliers
+      responses:
+        '200':
+          description: Lista de proveedores
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Supplier'
+  /suppliers/{id}:
+    get:
+      summary: Obtener proveedor por id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proveedor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Supplier'
+  /invoices:
+    post:
+      summary: Registrar factura
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvoiceCreate'
+      responses:
+        '201':
+          description: Factura creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+    get:
+      summary: Listar facturas
+      responses:
+        '200':
+          description: Lista de facturas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Invoice'
+components:
+  schemas:
+    Supplier:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        contactEmail:
+          type: string
+    InvoiceCreate:
+      type: object
+      properties:
+        supplierId:
+          type: string
+        amount:
+          type: number
+          format: float
+        dueDate:
+          type: string
+          format: date
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: string
+        supplierId:
+          type: string
+        amount:
+          type: number
+          format: float
+        createdAt:
+          type: string
+          format: date-time
