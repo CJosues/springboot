@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import postgres from 'postgres';
 import bcrypt from 'bcrypt';
-import { signIn } from '@/auth';
+import { signIn, signOut } from '@/auth';
 import { AuthError } from 'next-auth';
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
@@ -244,4 +244,9 @@ export async function authenticate(
     // Unknown error: rethrow so the host can log/handle it.
     throw error;
   }
+}
+
+// Sign out action for use in server components (e.g., SideNav)
+export async function signOutAction() {
+  await signOut({ redirectTo: '/' });
 }
